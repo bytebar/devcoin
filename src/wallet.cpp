@@ -787,7 +787,8 @@ bool CWallet::SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfThe
                     nValueRet += coin.first;
                     return true;
                 }
-                else if (n < nTargetValue + CENT)
+//                else if (n < nTargetValue + CENT)
+                else if (n < nTargetValue + MIN_TX_FEE)
                 {
                     vValue.push_back(coin);
                     nTotalLower += n;
@@ -800,7 +801,8 @@ bool CWallet::SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfThe
         }
     }
 
-    if (nTotalLower == nTargetValue || nTotalLower == nTargetValue + CENT)
+//    if (nTotalLower == nTargetValue || nTotalLower == nTargetValue + CENT)
+    if (nTotalLower == nTargetValue || nTotalLower == nTargetValue + MIN_TX_FEE)
     {
         for (int i = 0; i < vValue.size(); ++i)
         {
@@ -810,7 +812,8 @@ bool CWallet::SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfThe
         return true;
     }
 
-    if (nTotalLower < nTargetValue + (coinLowestLarger.second.first ? CENT : 0))
+//    if (nTotalLower < nTargetValue + (coinLowestLarger.second.first ? CENT : 0))
+    if (nTotalLower < nTargetValue + (coinLowestLarger.second.first ? MIN_TX_FEE : 0))
     {
         if (coinLowestLarger.second.first == NULL)
             return false;
@@ -819,8 +822,10 @@ bool CWallet::SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfThe
         return true;
     }
 
-    if (nTotalLower >= nTargetValue + CENT)
-        nTargetValue += CENT;
+//    if (nTotalLower >= nTargetValue + CENT)
+//        nTargetValue += CENT;
+    if (nTotalLower >= nTargetValue + MIN_TX_FEE)
+        nTargetValue += MIN_TX_FEE;
 
     // Solve subset sum by stochastic approximation
     sort(vValue.rbegin(), vValue.rend());

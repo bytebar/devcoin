@@ -9,6 +9,7 @@
 #include "cryptopp/sha.h"
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include "receiver.h"
 
 using namespace std;
 using namespace boost;
@@ -16,6 +17,12 @@ using namespace boost;
 //
 // Global state
 //
+
+
+static const int64 initialSubsidy = 50000 * COIN;
+static const int64 share = initialSubsidy * 9 / 10;
+static const int64 fallbackReduction = (initialSubsidy + share) / 2;
+static const int step = 4000;
 
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
@@ -28,10 +35,10 @@ unsigned int nTransactionsUpdated = 0;
 map<COutPoint, CInPoint> mapNextTx;
 
 map<uint256, CBlockIndex*> mapBlockIndex;
-uint256 hashGenesisBlock("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
+uint256 hashGenesisBlock("0x0000000062558fec003bcbf29e915cddfc34fa257dc87573f28e4520d1c7c11e");
 CBigNum bnProofOfWorkLimit(~uint256(0) >> 32);
-const int nTotalBlocksEstimate = 134444; // Conservative estimate of total nr of blocks on main chain
-const int nInitialBlockThreshold = 120; // Regard blocks up until N-threshold as "initial download"
+const int nTotalBlocksEstimate = 18851; // Conservative estimate of total nr of blocks on main chain
+const int nInitialBlockThreshold = 18851; // Regard blocks up until N-threshold as "initial download"
 CBlockIndex* pindexGenesisBlock = NULL;
 int nBestHeight = -1;
 CBigNum bnBestChainWork = 0;
@@ -62,11 +69,6 @@ int fUseUPnP = true;
 #else
 int fUseUPnP = false;
 #endif
-
-
-
-
-
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -642,45 +644,87 @@ uint256 static GetOrphanRoot(const CBlock* pblock)
 
 int64 static GetBlockValue(int nHeight, int64 nFees)
 {
-    int64 nSubsidy = 50 * COIN;
+    //int64 nSubsidy = 50 * COIN;
+    int64 nSubsidy = initialSubsidy;
 
     // Subsidy is cut in half every 4 years
-    nSubsidy >>= (nHeight / 210000);
+//    nSubsidy >>= (nHeight / 210000);
 
     return nSubsidy + nFees;
 }
 
+
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
-    const int64 nTargetTimespan = 14 * 24 * 60 * 60; // two weeks
+    const int nSmoothBlock = 10700;
     const int64 nTargetSpacing = 10 * 60;
-    const int64 nInterval = nTargetTimespan / nTargetSpacing;
+    int64 nTargetTimespan = 24 * 60 * 60; // one day
+
+    if (pindexLast->nHeight < nSmoothBlock)
+        nTargetTimespan *= 14; // two weeks
+
+    int64 nInterval = nTargetTimespan / nTargetSpacing;
 
     // Genesis block
     if (pindexLast == NULL)
         return bnProofOfWorkLimit.GetCompact();
 
-    // Only change once per interval
-    if ((pindexLast->nHeight+1) % nInterval != 0)
+    const int nMedianBlock = 10800;
+    int64 nIntervalMinusOne = nInterval-1;
+
+    if (pindexLast->nHeight < 10)
         return pindexLast->nBits;
 
-    // Go back by what we want to be 14 days worth of blocks
+    // Change at each block after nSmoothBlock
+    if (pindexLast->nHeight < nSmoothBlock)
+        if ((pindexLast->nHeight+1) % nInterval != 0)
+            return pindexLast->nBits;
+
+    // Go back by what we want to be one day worth of blocks
     const CBlockIndex* pindexFirst = pindexLast;
-    for (int i = 0; pindexFirst && i < nInterval-1; i++)
+    vector<int64> blockTimes;
+    CBigNum averageBits;
+    averageBits.SetCompact(0);
+
+    for (int i = 0; pindexFirst && i < nIntervalMinusOne; i++)
+    {
+        averageBits += CBigNum().SetCompact(pindexFirst->nBits);
+        blockTimes.push_back(pindexFirst->GetBlockTime());
         pindexFirst = pindexFirst->pprev;
+    }
+
     assert(pindexFirst);
+    int blockTimeEndIndex = blockTimes.size() - 6;
+    sort(blockTimes.begin(), blockTimes.end());
+    averageBits /= nIntervalMinusOne;
 
     // Limit adjustment step
     int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
+    int64 nMedianTimespan = blockTimes[blockTimeEndIndex] - blockTimes[6];
+    nMedianTimespan *= nIntervalMinusOne / (int64)(blockTimeEndIndex - 6);
+
+    // Change nActualTimespan after nMedianBlock
+    if (pindexLast->nHeight > nMedianBlock)
+    {
+        nActualTimespan = nMedianTimespan;
+    }
+
     printf("  nActualTimespan = %"PRI64d"  before bounds\n", nActualTimespan);
+
     if (nActualTimespan < nTargetTimespan/4)
         nActualTimespan = nTargetTimespan/4;
+
     if (nActualTimespan > nTargetTimespan*4)
         nActualTimespan = nTargetTimespan*4;
 
     // Retarget
     CBigNum bnNew;
     bnNew.SetCompact(pindexLast->nBits);
+
+    // Change bnNew after nMedianBlock
+    if (pindexLast->nHeight > nMedianBlock)
+        bnNew = averageBits;
+
     bnNew *= nActualTimespan;
     bnNew /= nTargetTimespan;
 
@@ -695,6 +739,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast)
 
     return bnNew.GetCompact();
 }
+
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits)
 {
@@ -753,14 +798,6 @@ void static InvalidChainFound(CBlockIndex* pindexNew)
     if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6)
         printf("InvalidChainFound: WARNING: Displayed transactions may not be correct!  You may need to upgrade, or other nodes may need to upgrade.\n");
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -1003,6 +1040,29 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
 
     if (vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
         return false;
+
+
+    //
+    // Check that the required share was sent to each beneficiary
+    //
+    if (vtx[0].GetValueOut() > (GetBlockValue(pindex->nHeight, nFees) - fallbackReduction))
+    {
+     	std::vector<std::string> addressStrings;
+        std::vector<int64> amounts;
+
+        for (int i = 1; i < vtx[0].vout.size(); i++)
+        {
+            if (vtx[0].vout[i].scriptPubKey.GetBitcoinAddress().IsValid())
+            {
+                addressStrings.push_back(vtx[0].vout[i].scriptPubKey.GetBitcoinAddress().ToString());
+                amounts.push_back(vtx[0].vout[i].nValue);
+            }
+        }
+
+	if (!getIsSufficientAmount(addressStrings, amounts, GetDataDir(), string("receiver.csv"), (int)pindex->nHeight, share, step))
+            return error("ConnectBlock() : Share to beneficiary is insufficient");
+    }
+
 
     // Update block index on disk without changing it in memory.
     // The memory index structure will be changed after the db commits.
@@ -1294,14 +1354,13 @@ bool CBlock::AcceptBlock()
 
     // Check that the block chain matches the known block chain up to a checkpoint
     if (!fTestNet)
-        if ((nHeight ==  11111 && hash != uint256("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d")) ||
-            (nHeight ==  33333 && hash != uint256("0x000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6")) ||
-            (nHeight ==  68555 && hash != uint256("0x00000000001e1b4903550a0b96e9a9405c8a95f387162e4944e8d9fbe501cd6a")) ||
-            (nHeight ==  70567 && hash != uint256("0x00000000006a49b14bcf27462068f1264c961f11fa2e0eddd2be0791e1d4124a")) ||
-            (nHeight ==  74000 && hash != uint256("0x0000000000573993a3c9e41ce34471c079dcf5f52a0e824a81e7f953b8661a20")) ||
-            (nHeight == 105000 && hash != uint256("0x00000000000291ce28027faea320c8d2b054b2e0fe44a773f3eefb151d6bdc97")) ||
-            (nHeight == 118000 && hash != uint256("0x000000000000774a7f8a7a12dc906ddb9e17e75d684f15e00f8767f9e8f36553")) ||
-            (nHeight == 134444 && hash != uint256("0x00000000000005b12ffd4cd315cd34ffd4a594f430ac814c91184a0d42d2b0fe")))
+        if ((nHeight ==  2345 && hash != uint256("0x000000000de3570a6eb881351bd967f80496309004fdc582b965137086754b0c")) ||
+            (nHeight ==  2500 && hash != uint256("0x000000001871a2314936d39b85174cc911bf6fd58d3877412ee7b69a48e7e29e")) ||
+            (nHeight ==  2700 && hash != uint256("0x0000000008e46decc106f05aac777240f72b789333960d058aec2eefaa6a49f0")) ||
+            (nHeight ==  3500 && hash != uint256("0x00000000207e6ef7d89a813bf7c27e8a31f1ca1b703f8fc5aeeeb0c183b8048e")) ||
+            (nHeight ==  4500 && hash != uint256("0x000000000967cc95711f66f804e3f431298686d681d2d5760f61856954d08faf")) ||
+            (nHeight ==  5250 && hash != uint256("0x00000000085702bfbf27daffb638be65aceb78a5f464b12539b51c1b9c548421")) ||
+            (nHeight ==  8900 && hash != uint256("0x00000000001bb8090630fcabb82ad0ab75df3eb5b008956b3ae2a352a4324f19")))
             return error("AcceptBlock() : rejected by checkpoint lockin at %d", nHeight);
 
     // Write block to history file
@@ -1489,12 +1548,12 @@ bool LoadBlockIndex(bool fAllowNew)
 {
     if (fTestNet)
     {
-        hashGenesisBlock = uint256("0x00000007199508e34a9ff81e6ec0c477a4cccff2a4767a8eee39c11db367b008");
+        hashGenesisBlock = uint256("0x0000000062558fec003bcbf29e915cddfc34fa257dc87573f28e4520d1c7c11e");
         bnProofOfWorkLimit = CBigNum(~uint256(0) >> 28);
-        pchMessageStart[0] = 0xfa;
-        pchMessageStart[1] = 0xbf;
-        pchMessageStart[2] = 0xb5;
-        pchMessageStart[3] = 0xda;
+        pchMessageStart[0] = 'd';
+        pchMessageStart[1] = 'e';
+        pchMessageStart[2] = 'v';
+        pchMessageStart[3] = '-';
     }
 
     //
@@ -1521,7 +1580,7 @@ bool LoadBlockIndex(bool fAllowNew)
         //   vMerkleTree: 4a5e1e
 
         // Genesis block
-        const char* pszTimestamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
+        const char* pszTimestamp = "The Times web front page 22-Jul-2011 Europe hails 'historic' deal to save single currency";
         CTransaction txNew;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
@@ -1533,22 +1592,72 @@ bool LoadBlockIndex(bool fAllowNew)
         block.hashPrevBlock = 0;
         block.hashMerkleRoot = block.BuildMerkleTree();
         block.nVersion = 1;
-        block.nTime    = 1231006505;
+        block.nTime    = 1311305081;
         block.nBits    = 0x1d00ffff;
-        block.nNonce   = 2083236893;
+        block.nNonce   = 3085127155;
 
         if (fTestNet)
         {
-            block.nTime    = 1296688602;
+            block.nTime    = 1311305081;
             block.nBits    = 0x1d07fff8;
-            block.nNonce   = 384568319;
+            block.nNonce   = 3085127155;
         }
 
         //// debug print
+        printf("block.nTime = %u \n", block.nTime);
+        printf("block.nBits = %u \n", block.nBits);
+        printf("block.nNonce = %u \n", block.nNonce);
+        printf("%s\n", block.GetHash().ToString().c_str());
+       	printf("%s\n", hashGenesisBlock.ToString().c_str());
+        printf("%s\n", block.hashMerkleRoot.ToString().c_str());
+        if (block.hashMerkleRoot != uint256("0xe61339a40aa4e90e983fe0d64cf09eed5fa1e6eac227b6761f06ac7af1929baf"))
+        {
+           // This will figure out a valid hash and Nonce if you're
+           // creating a different genesis block:
+           uint256 hashTarget = CBigNum().SetCompact(block.nBits).getuint256();
+           while (block.GetHash() > hashTarget)
+           {
+               ++block.nNonce;
+               if (block.nNonce == 0)
+               {
+                   printf("NONCE WRAPPED, incrementing time\n");
+                   ++block.nTime;
+               }
+           }
+        }
+
+        //// debug print
+        printf("block.nTime = %u \n", block.nTime);
+        printf("block.nBits = %u \n", block.nBits);
+        printf("block.nNonce = %u \n", block.nNonce);
         printf("%s\n", block.GetHash().ToString().c_str());
         printf("%s\n", hashGenesisBlock.ToString().c_str());
         printf("%s\n", block.hashMerkleRoot.ToString().c_str());
-        assert(block.hashMerkleRoot == uint256("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        block.print();
+        assert(block.hashMerkleRoot == uint256("0xe61339a40aa4e90e983fe0d64cf09eed5fa1e6eac227b6761f06ac7af1929baf"));
+
+        if (block.GetHash() != hashGenesisBlock)
+        {
+           // This will figure out a valid hash and Nonce if you're
+           // creating a different genesis block:
+           uint256 hashTarget = CBigNum().SetCompact(block.nBits).getuint256();
+           while (block.GetHash() > hashTarget)
+           {
+               ++block.nNonce;
+               if (block.nNonce == 0)
+               {
+                   printf("NONCE WRAPPED, incrementing time");
+                   ++block.nTime;
+               }
+           }
+	}
+	//// debug print
+        printf("block.nTime = %u \n", block.nTime);
+        printf("block.nBits = %u \n", block.nBits);
+        printf("block.nNonce = %u \n", block.nNonce);
+        printf("%s\n", block.GetHash().ToString().c_str());
+        printf("%s\n", hashGenesisBlock.ToString().c_str());
+        printf("%s\n", block.hashMerkleRoot.ToString().c_str());
         block.print();
         assert(block.GetHash() == hashGenesisBlock);
 
@@ -1776,7 +1885,7 @@ bool static AlreadyHave(CTxDB& txdb, const CInv& inv)
 // The message start string is designed to be unlikely to occur in normal data.
 // The characters are rarely used upper ascii, not valid as UTF-8, and produce
 // a large 4-byte int at any alignment.
-unsigned char pchMessageStart[4] = { 0xf9, 0xbe, 0xb4, 0xd9 };
+unsigned char pchMessageStart[4] = { 'D', 'E', 'V', ':' };
 
 
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
@@ -2696,18 +2805,49 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
     if (!pblock.get())
         return NULL;
 
+
     // Create coinbase tx
     CTransaction txNew;
     txNew.vin.resize(1);
     txNew.vin[0].prevout.SetNull();
-    txNew.vout.resize(1);
+
+    vector<string> coinAddressStrings = getCoinAddressStrings(GetDataDir(), string("receiver.csv"), (int)pindexPrev->nHeight+1, step);
+    txNew.vout.resize(coinAddressStrings.size() + 1);
     txNew.vout[0].scriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
+
+    // Prepare to pay beneficiaries
+
+    int64 nFees = 0;
+    int64 minerValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
+    //int64 sharePerAddress = share / (int64)coinAddressStrings.size();
+    int64 sharePerAddress = 0;
+    if (coinAddressStrings.size() == 0)
+        minerValue -= fallbackReduction;
+    else
+        sharePerAddress = (int64)share / (int64)coinAddressStrings.size();
+
+    for (int i=0; i<coinAddressStrings.size(); i++)
+    {
+     	std::string coinAddressString = coinAddressStrings[i];
+
+        // Create transaction
+        CBitcoinAddress addr(coinAddressString);
+        if(!addr.IsValid())
+        {
+            return NULL;
+        }
+
+	txNew.vout[i + 1].scriptPubKey << OP_DUP << OP_HASH160 << addr.GetHash160() << OP_EQUALVERIFY << OP_CHECKSIG;
+        txNew.vout[i + 1].nValue = sharePerAddress;
+        minerValue -= sharePerAddress;
+    }
 
     // Add our coinbase tx as first transaction
     pblock->vtx.push_back(txNew);
 
+
     // Collect memory pool transactions into the block
-    int64 nFees = 0;
+    //int64 nFees = 0;
     CRITICAL_BLOCK(cs_main)
     CRITICAL_BLOCK(cs_mapTransactions)
     {
@@ -2822,7 +2962,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
             }
         }
     }
-    pblock->vtx[0].vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
+    pblock->vtx[0].vout[0].nValue = minerValue + nFees;
 
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();

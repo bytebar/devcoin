@@ -10,16 +10,11 @@ WXLIBS=$(shell wx-config --libs)
 
 USE_UPNP:=0
 
-DEFS=-DNOPCH -DFOURWAYSSE2 -DUSE_SSL
+DEFS=-DNOPCH -DFOURWAYSSE2 -DUSE_SSL -I../../deps/include
 
 # for boost 1.37, add -mt to the boost libraries
-LIBS= \
+LIBS= -L../../deps/lib \
  -Wl,-Bstatic \
-   -l boost_system \
-   -l boost_filesystem \
-   -l boost_program_options \
-   -l boost_thread \
-   -l db_cxx \
    -l ssl \
    -l crypto
 
@@ -30,17 +25,23 @@ endif
 
 LIBS+= \
  -Wl,-Bdynamic \
+   -l boost_system-mt \
+   -l boost_filesystem-mt \
+   -l boost_program_options-mt \
+   -l boost_thread-mt \
+   -l db_cxx \
    -l gthread-2.0 \
    -l z \
    -l dl \
    -l pthread \
    -l curl
 
+
 DEBUGFLAGS=-g -D__WXDEBUG__
 CXXFLAGS=-O2 -Wno-invalid-offsetof -Wformat $(DEBUGFLAGS) $(DEFS)
-HEADERS=headers.h strlcpy.h serialize.h uint256.h util.h key.h bignum.h base58.h \
-    script.h db.h net.h irc.h keystore.h main.h wallet.h rpc.h uibase.h ui.h noui.h \
-    init.h crypter.h receiver.h
+HEADERS=headers.h strlcpy.h serialize.h uint256.h util.h key.h bignum.h \
+    base58.h script.h db.h net.h irc.h keystore.h main.h wallet.h rpc.h \
+    uibase.h ui.h noui.h init.h receiver.h
 
 OBJS= \
     obj/util.o \
@@ -53,7 +54,6 @@ OBJS= \
     obj/wallet.o \
     obj/rpc.o \
     obj/init.o \
-    obj/crypter.o \
     cryptopp/obj/sha.o \
     cryptopp/obj/cpu.o
 
@@ -78,10 +78,10 @@ bitcoind: $(OBJS:obj/%=obj/nogui/%)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
 
 obj/test/%.o: test/%.cpp $(HEADERS)
-	$(CXX) -c $(CXXFLAGS) -o $@ $<
+	$(CXX) -c $(CFLAGS) -o $@ $<
 
-test_bitcoin: obj/test/test_bitcoin.o $(filter-out obj/nogui/init.o,$(OBJS:obj/%=obj/nogui/%))
-	$(CXX) $(CXXFLAGS) -o $@ $(LIBPATHS) $^ -Wl,-Bstatic -lboost_unit_test_framework $(LIBS)
+test_bitcoin: obj/test/test_bitcoin.o
+	$(CXX) $(CFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS) -lboost_unit_test_framework
 
 clean:
 	-rm -f bitcoin bitcoind test_bitcoin
