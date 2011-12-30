@@ -257,7 +257,7 @@ bool GetWalletPassphrase()
 
         // obtain current wallet encrypt/decrypt key, from passphrase
         // Note that the passphrase is not mlock()d during this entry and could potentially
-        // be obtained from disk long after bitcoin has run.
+        // be obtained from disk long after devcoin has run.
         strWalletPass = wxGetPasswordFromUser(_("Enter the current passphrase to the wallet."),
                                               _("Passphrase")).ToStdString();
 
@@ -265,7 +265,7 @@ bool GetWalletPassphrase()
         {
             fill(strWalletPass.begin(), strWalletPass.end(), '\0');
             munlock(&strWalletPass[0], strWalletPass.capacity());
-            wxMessageBox(_("Please supply the current wallet decryption passphrase."), "Bitcoin");
+            wxMessageBox(_("Please supply the current wallet decryption passphrase."), "Devcoin");
             return false;
         }
 
@@ -273,7 +273,7 @@ bool GetWalletPassphrase()
         {
             fill(strWalletPass.begin(), strWalletPass.end(), '\0');
             munlock(&strWalletPass[0], strWalletPass.capacity());
-            wxMessageBox(_("The passphrase entered for the wallet decryption was incorrect."), "Bitcoin");
+            wxMessageBox(_("The passphrase entered for the wallet decryption was incorrect."), "Devcoin");
             return false;
         }
         fill(strWalletPass.begin(), strWalletPass.end(), '\0');
@@ -1168,7 +1168,7 @@ void CMainFrame::OnMenuOptionsEncryptWallet(wxCommandEvent& event)
     // Options->Encrypt Wallet
     if (pwalletMain->IsCrypted())
     {
-        wxMessageBox(_("Wallet already encrypted."), "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(_("Wallet already encrypted."), "Devcoin", wxOK | wxICON_ERROR);
         return;
     }
 
@@ -1178,7 +1178,7 @@ void CMainFrame::OnMenuOptionsEncryptWallet(wxCommandEvent& event)
 
     // obtain current wallet encrypt/decrypt key, from passphrase
     // Note that the passphrase is not mlock()d during this entry and could potentially
-    // be obtained from disk long after bitcoin has run.
+    // be obtained from disk long after devcoin has run.
     strWalletPass = wxGetPasswordFromUser(_("Enter the new passphrase to the wallet.\nPlease use a passphrase of 10 or more random characters, or eight or more words."),
                                           _("Passphrase")).ToStdString();
 
@@ -1186,11 +1186,11 @@ void CMainFrame::OnMenuOptionsEncryptWallet(wxCommandEvent& event)
     {
         fill(strWalletPass.begin(), strWalletPass.end(), '\0');
         munlock(&strWalletPass[0], strWalletPass.capacity());
-        wxMessageBox(_("Error: The supplied passphrase was too short."), "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(_("Error: The supplied passphrase was too short."), "Devcoin", wxOK | wxICON_ERROR);
         return;
     }
 
-    if(wxMessageBox(_("WARNING: If you encrypt your wallet and lose your passphrase, you will LOSE ALL OF YOUR BITCOINS!\nAre you sure you wish to encrypt your wallet?"), "Bitcoin", wxYES_NO) != wxYES)
+    if(wxMessageBox(_("WARNING: If you encrypt your wallet and lose your passphrase, you will LOSE ALL OF YOUR BITCOINS!\nAre you sure you wish to encrypt your wallet?"), "Devcoin", wxYES_NO) != wxYES)
         return;
 
     string strWalletPassTest;
@@ -1205,7 +1205,7 @@ void CMainFrame::OnMenuOptionsEncryptWallet(wxCommandEvent& event)
         fill(strWalletPassTest.begin(), strWalletPassTest.end(), '\0');
         munlock(&strWalletPass[0], strWalletPass.capacity());
         munlock(&strWalletPassTest[0], strWalletPassTest.capacity());
-        wxMessageBox(_("Error: the supplied passphrases didn't match."), "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(_("Error: the supplied passphrases didn't match."), "Devcoin", wxOK | wxICON_ERROR);
         return;
     }
 
@@ -1215,14 +1215,14 @@ void CMainFrame::OnMenuOptionsEncryptWallet(wxCommandEvent& event)
         fill(strWalletPassTest.begin(), strWalletPassTest.end(), '\0');
         munlock(&strWalletPass[0], strWalletPass.capacity());
         munlock(&strWalletPassTest[0], strWalletPassTest.capacity());
-        wxMessageBox(_("Wallet encryption failed."), "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(_("Wallet encryption failed."), "Devcoin", wxOK | wxICON_ERROR);
         return;
     }
     fill(strWalletPass.begin(), strWalletPass.end(), '\0');
     fill(strWalletPassTest.begin(), strWalletPassTest.end(), '\0');
     munlock(&strWalletPass[0], strWalletPass.capacity());
     munlock(&strWalletPassTest[0], strWalletPassTest.capacity());
-    wxMessageBox(_("Wallet Encrypted.\nRemember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer."), "Bitcoin");
+    wxMessageBox(_("Wallet Encrypted.\nRemember that encrypting your wallet cannot fully protect your devcoins from being stolen by malware infecting your computer."), "Devcoin");
 
     m_menuOptions->Remove(m_menuOptionsEncryptWallet);
     m_menuOptions->Insert(m_menuOptions->GetMenuItemCount() - 1, m_menuOptionsChangeWalletPassphrase);
@@ -1233,7 +1233,7 @@ void CMainFrame::OnMenuOptionsChangeWalletPassphrase(wxCommandEvent& event)
     // Options->Change Wallet Encryption Passphrase
     if (!pwalletMain->IsCrypted())
     {
-        wxMessageBox(_("Wallet is unencrypted, please encrypt it first."), "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(_("Wallet is unencrypted, please encrypt it first."), "Devcoin", wxOK | wxICON_ERROR);
         return;
     }
 
@@ -1243,7 +1243,7 @@ void CMainFrame::OnMenuOptionsChangeWalletPassphrase(wxCommandEvent& event)
 
     // obtain current wallet encrypt/decrypt key, from passphrase
     // Note that the passphrase is not mlock()d during this entry and could potentially
-    // be obtained from disk long after bitcoin has run.
+    // be obtained from disk long after devcoin has run.
     strOldWalletPass = wxGetPasswordFromUser(_("Enter the current passphrase to the wallet."),
                                              _("Passphrase")).ToStdString();
 
@@ -1254,7 +1254,7 @@ void CMainFrame::OnMenuOptionsChangeWalletPassphrase(wxCommandEvent& event)
     {
         fill(strOldWalletPass.begin(), strOldWalletPass.end(), '\0');
         munlock(&strOldWalletPass[0], strOldWalletPass.capacity());
-        wxMessageBox(_("The passphrase entered for the wallet decryption was incorrect."), "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(_("The passphrase entered for the wallet decryption was incorrect."), "Devcoin", wxOK | wxICON_ERROR);
         return;
     }
 
@@ -1267,7 +1267,7 @@ void CMainFrame::OnMenuOptionsChangeWalletPassphrase(wxCommandEvent& event)
 
     // obtain new wallet encrypt/decrypt key, from passphrase
     // Note that the passphrase is not mlock()d during this entry and could potentially
-    // be obtained from disk long after bitcoin has run.
+    // be obtained from disk long after devcoin has run.
     strNewWalletPass = wxGetPasswordFromUser(_("Enter the new passphrase for the wallet."),
                                              _("Passphrase")).ToStdString();
 
@@ -1277,7 +1277,7 @@ void CMainFrame::OnMenuOptionsChangeWalletPassphrase(wxCommandEvent& event)
         fill(strNewWalletPass.begin(), strNewWalletPass.end(), '\0');
         munlock(&strOldWalletPass[0], strOldWalletPass.capacity());
         munlock(&strNewWalletPass[0], strNewWalletPass.capacity());
-        wxMessageBox(_("Error: The supplied passphrase was too short."), "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(_("Error: The supplied passphrase was too short."), "Devcoin", wxOK | wxICON_ERROR);
         return;
     }
 
@@ -1287,7 +1287,7 @@ void CMainFrame::OnMenuOptionsChangeWalletPassphrase(wxCommandEvent& event)
 
     // obtain new wallet encrypt/decrypt key, from passphrase
     // Note that the passphrase is not mlock()d during this entry and could potentially
-    // be obtained from disk long after bitcoin has run.
+    // be obtained from disk long after devcoin has run.
     strNewWalletPassTest = wxGetPasswordFromUser(_("Re-enter the new passphrase for the wallet."),
                                                  _("Passphrase")).ToStdString();
 
@@ -1299,7 +1299,7 @@ void CMainFrame::OnMenuOptionsChangeWalletPassphrase(wxCommandEvent& event)
         munlock(&strOldWalletPass[0], strOldWalletPass.capacity());
         munlock(&strNewWalletPass[0], strNewWalletPass.capacity());
         munlock(&strNewWalletPassTest[0], strNewWalletPassTest.capacity());
-        wxMessageBox(_("Error: the supplied passphrases didn't match."), "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(_("Error: the supplied passphrases didn't match."), "Devcoin", wxOK | wxICON_ERROR);
         return;
     }
 
@@ -1311,7 +1311,7 @@ void CMainFrame::OnMenuOptionsChangeWalletPassphrase(wxCommandEvent& event)
         munlock(&strOldWalletPass[0], strOldWalletPass.capacity());
         munlock(&strNewWalletPass[0], strNewWalletPass.capacity());
         munlock(&strNewWalletPassTest[0], strNewWalletPassTest.capacity());
-        wxMessageBox(_("The passphrase entered for the wallet decryption was incorrect."), "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(_("The passphrase entered for the wallet decryption was incorrect."), "Devcoin", wxOK | wxICON_ERROR);
         return;
     }
     fill(strOldWalletPass.begin(), strOldWalletPass.end(), '\0');
@@ -1320,7 +1320,7 @@ void CMainFrame::OnMenuOptionsChangeWalletPassphrase(wxCommandEvent& event)
     munlock(&strOldWalletPass[0], strOldWalletPass.capacity());
     munlock(&strNewWalletPass[0], strNewWalletPass.capacity());
     munlock(&strNewWalletPassTest[0], strNewWalletPassTest.capacity());
-    wxMessageBox(_("Wallet Passphrase Changed."), "Bitcoin");
+    wxMessageBox(_("Wallet Passphrase Changed."), "Devcoin");
 }
 
 void CMainFrame::OnMenuOptionsOptions(wxCommandEvent& event)
@@ -1706,7 +1706,7 @@ void CTxDetailsDialog::OnButtonOK(wxCommandEvent& event)
 #ifdef __WXMSW__
 string StartupShortcutPath()
 {
-    return MyGetSpecialFolderPath(CSIDL_STARTUP, true) + "\\Bitcoin.lnk";
+    return MyGetSpecialFolderPath(CSIDL_STARTUP, true) + "\\Devcoin.lnk";
 }
 
 bool GetStartOnSystemStartup()
@@ -1779,7 +1779,7 @@ boost::filesystem::path GetAutostartDir()
 
 boost::filesystem::path GetAutostartFilePath()
 {
-    return GetAutostartDir() / boost::filesystem::path("bitcoin.desktop");
+    return GetAutostartDir() / boost::filesystem::path("devcoin.desktop");
 }
 
 bool GetStartOnSystemStartup()
@@ -1823,13 +1823,13 @@ void SetStartOnSystemStartup(bool fAutoStart)
         boost::filesystem::ofstream optionFile(GetAutostartFilePath(), ios_base::out|ios_base::trunc);
         if (!optionFile.good())
         {
-            wxMessageBox(_("Cannot write autostart/bitcoin.desktop file"), "Bitcoin");
+            wxMessageBox(_("Cannot write autostart/devcoin.desktop file"), "Devcoin");
             return;
         }
-        // Write a bitcoin.desktop file to the autostart directory:
+        // Write a devcoin.desktop file to the autostart directory:
         optionFile << "[Desktop Entry]\n";
         optionFile << "Type=Application\n";
-        optionFile << "Name=Bitcoin\n";
+        optionFile << "Name=Devcoin\n";
         optionFile << "Exec=" << pszExePath << "\n";
         optionFile << "Terminal=false\n";
         optionFile << "Hidden=false\n";
@@ -1869,7 +1869,7 @@ COptionsDialog::COptionsDialog(wxWindow* parent) : COptionsDialogBase(parent)
     SetSize(nScaleX * GetSize().GetWidth(), nScaleY * GetSize().GetHeight());
 #endif
 #if defined(__WXGTK__) || defined(__WXMAC_OSX__)
-    m_checkBoxStartOnSystemStartup->SetLabel(_("&Start Bitcoin on window system startup"));
+    m_checkBoxStartOnSystemStartup->SetLabel(_("&Start Devcoin on window system startup"));
     if (!GetBoolArg("-minimizetotray"))
     {
         // Minimize to tray is just too buggy on Linux
@@ -2155,7 +2155,7 @@ void CSendDialog::OnButtonSend(wxCommandEvent& event)
             return;
         }
 
-        // Parse bitcoin address
+        // Parse devcoin address
         CBitcoinAddress address(strAddress);
         bool fBitcoinAddress = address.IsValid();
 
@@ -2169,7 +2169,7 @@ void CSendDialog::OnButtonSend(wxCommandEvent& event)
 	    CRITICAL_BLOCK(cs_main)
             CRITICAL_BLOCK(pwalletMain->cs_wallet)
 	    {
-                // Send to bitcoin address
+                // Send to devcoin address
                 CScript scriptPubKey;
                 scriptPubKey.SetBitcoinAddress(address);
 
@@ -2628,7 +2628,7 @@ CAddressBookDialog::CAddressBookDialog(wxWindow* parent, const wxString& strInit
     m_listCtrlSending->InsertColumn(1, _("Address"), wxLIST_FORMAT_LEFT, 350);
     m_listCtrlSending->SetFocus();
     m_listCtrlReceiving->InsertColumn(0, _("Label"), wxLIST_FORMAT_LEFT, 200);
-    m_listCtrlReceiving->InsertColumn(1, _("Bitcoin Address"), wxLIST_FORMAT_LEFT, 350);
+    m_listCtrlReceiving->InsertColumn(1, _("Devcoin Address"), wxLIST_FORMAT_LEFT, 350);
     m_listCtrlReceiving->SetFocus();
 
     // Fill listctrl with address book data
@@ -2903,11 +2903,11 @@ void CMyTaskBarIcon::Show(bool fShow)
     static char pszPrevTip[200];
     if (fShow)
     {
-        string strTooltip = _("Bitcoin");
+        string strTooltip = _("Devcoin");
         if (fGenerateBitcoins)
-            strTooltip = _("Bitcoin - Generating");
+            strTooltip = _("Devcoin - Generating");
         if (fGenerateBitcoins && vNodes.empty())
-            strTooltip = _("Bitcoin - (not connected)");
+            strTooltip = _("Devcoin - (not connected)");
 
         // Optimization, only update when changed, using char array to be reentrant
         if (strncmp(pszPrevTip, strTooltip.c_str(), sizeof(pszPrevTip)-1) != 0)
@@ -2986,8 +2986,8 @@ void CMyTaskBarIcon::UpdateTooltip()
 wxMenu* CMyTaskBarIcon::CreatePopupMenu()
 {
     wxMenu* pmenu = new wxMenu;
-    pmenu->Append(ID_TASKBAR_RESTORE, _("&Open Bitcoin"));
-    pmenu->Append(ID_TASKBAR_SEND, _("&Send Bitcoins"));
+    pmenu->Append(ID_TASKBAR_RESTORE, _("&Open Devcoin"));
+    pmenu->Append(ID_TASKBAR_SEND, _("&Send Devcoins"));
     pmenu->Append(ID_TASKBAR_OPTIONS, _("O&ptions..."));
 #ifndef __WXMAC_OSX__ // Mac has built-in quit menu
     pmenu->AppendSeparator();
@@ -3121,9 +3121,9 @@ bool CMyApp::OnInit()
     g_isPainting = 10000;
 #endif
 #if defined(__WXMSW__ ) || defined(__WXMAC_OSX__)
-    SetAppName("Bitcoin");
+    SetAppName("Devcoin");
 #else
-    SetAppName("bitcoin");
+    SetAppName("devcoin");
 #endif
 #ifdef __WXMSW__
 #if wxUSE_UNICODE
@@ -3148,7 +3148,7 @@ bool CMyApp::OnInit()
     g_locale.AddCatalogLookupPathPrefix("/usr/local/share/locale");
 #endif
     g_locale.AddCatalog("wxstd"); // wxWidgets standard translations, if any
-    g_locale.AddCatalog("bitcoin");
+    g_locale.AddCatalog("devcoin");
 
 #ifdef __WXMSW__
     HDC hdc = GetDC(NULL);
@@ -3217,5 +3217,5 @@ void CMyApp::OnUnhandledException()
 
 void CMyApp::OnFatalException()
 {
-    wxMessageBox(_("Program has crashed and will terminate.  "), "Bitcoin", wxOK | wxICON_ERROR);
+    wxMessageBox(_("Program has crashed and will terminate.  "), "Devcoin", wxOK | wxICON_ERROR);
 }

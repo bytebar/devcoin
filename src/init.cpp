@@ -162,13 +162,13 @@ bool AppInit2(int argc, char* argv[])
         string strUsage = string() +
           _("Bitcoin version") + " " + FormatFullVersion() + "\n\n" +
           _("Usage:") + "\t\t\t\t\t\t\t\t\t\t\n" +
-            "  bitcoin [options]                   \t  " + "\n" +
-            "  bitcoin [options] <command> [params]\t  " + _("Send command to -server or bitcoind\n") +
-            "  bitcoin [options] help              \t\t  " + _("List commands\n") +
-            "  bitcoin [options] help <command>    \t\t  " + _("Get help for a command\n") +
+            "  devcoin [options]                   \t  " + "\n" +
+            "  devcoin [options] <command> [params]\t  " + _("Send command to -server or devcoind\n") +
+            "  devcoin [options] help              \t\t  " + _("List commands\n") +
+            "  devcoin [options] help <command>    \t\t  " + _("Get help for a command\n") +
           _("Options:\n") +
-            "  -conf=<file>     \t\t  " + _("Specify configuration file (default: bitcoin.conf)\n") +
-            "  -pid=<file>      \t\t  " + _("Specify pid file (default: bitcoind.pid)\n") +
+            "  -conf=<file>     \t\t  " + _("Specify configuration file (default: devcoin.conf)\n") +
+            "  -pid=<file>      \t\t  " + _("Specify pid file (default: devcoind.pid)\n") +
             "  -gen             \t\t  " + _("Generate coins\n") +
             "  -gen=0           \t\t  " + _("Don't generate coins\n") +
             "  -min             \t\t  " + _("Start minimized\n") +
@@ -309,7 +309,7 @@ bool AppInit2(int argc, char* argv[])
     //
 #if defined(__WXMSW__) && defined(GUI)
     // wxSingleInstanceChecker doesn't work on Linux
-    wxString strMutexName = wxString("bitcoin_running.") + getenv("HOMEPATH");
+    wxString strMutexName = wxString("devcoin_running.") + getenv("HOMEPATH");
     for (int i = 0; i < strMutexName.size(); i++)
         if (!isalnum(strMutexName[i]))
             strMutexName[i] = '.';
@@ -321,7 +321,7 @@ bool AppInit2(int argc, char* argv[])
         loop
         {
             // Show the previous instance and exit
-            HWND hwndPrev = FindWindowA("wxWindowClassNR", "Bitcoin");
+            HWND hwndPrev = FindWindowA("wxWindowClassNR", "Devcoin");
             if (hwndPrev)
             {
                 if (IsIconic(hwndPrev))
@@ -343,14 +343,14 @@ bool AppInit2(int argc, char* argv[])
     }
 #endif
 
-    // Make sure only a single bitcoin process is using the data directory.
+    // Make sure only a single devcoin process is using the data directory.
     string strLockFile = GetDataDir() + "/.lock";
     FILE* file = fopen(strLockFile.c_str(), "a"); // empty lock file; created if it doesn't exist.
     if (file) fclose(file);
     static boost::interprocess::file_lock lock(strLockFile.c_str());
     if (!lock.try_lock())
     {
-        wxMessageBox(strprintf(_("Cannot obtain a lock on data directory %s.  Bitcoin is probably already running."), GetDataDir().c_str()), "Bitcoin");
+        wxMessageBox(strprintf(_("Cannot obtain a lock on data directory %s.  Devcoin is probably already running."), GetDataDir().c_str()), "Devcoin");
         return false;
     }
 
@@ -360,7 +360,7 @@ bool AppInit2(int argc, char* argv[])
     {
         if (!BindListenPort(strErrors))
         {
-            wxMessageBox(strErrors, "Bitcoin");
+            wxMessageBox(strErrors, "Devcoin");
             return false;
         }
     }
@@ -369,7 +369,7 @@ bool AppInit2(int argc, char* argv[])
     // Load data files
     //
     if (fDaemon)
-        fprintf(stdout, "bitcoin server starting\n");
+        fprintf(stdout, "devcoin server starting\n");
     strErrors = "";
     int64 nStart;
 
@@ -395,11 +395,11 @@ bool AppInit2(int argc, char* argv[])
         if (nLoadWalletRet == DB_CORRUPT)
             strErrors += _("Error loading wallet.dat: Wallet corrupted      \n");
         else if (nLoadWalletRet == DB_TOO_NEW)
-            strErrors += _("Error loading wallet.dat: Wallet requires newer version of bitcoin      \n");
+            strErrors += _("Error loading wallet.dat: Wallet requires newer version of devcoin      \n");
         else if (nLoadWalletRet == DB_NEED_REWRITE)
         {
-            strErrors += _("Wallet needed to be rewritten: restart bitcoin to complete    \n");
-            wxMessageBox(strErrors, "Bitcoin", wxOK | wxICON_ERROR);
+            strErrors += _("Wallet needed to be rewritten: restart devcoin to complete    \n");
+            wxMessageBox(strErrors, "Devcoin", wxOK | wxICON_ERROR);
             return false;
         }
         else
@@ -438,7 +438,7 @@ bool AppInit2(int argc, char* argv[])
 
     if (!strErrors.empty())
     {
-        wxMessageBox(strErrors, "Bitcoin", wxOK | wxICON_ERROR);
+        wxMessageBox(strErrors, "Devcoin", wxOK | wxICON_ERROR);
         return false;
     }
 
@@ -492,7 +492,7 @@ bool AppInit2(int argc, char* argv[])
         addrProxy = CAddress(mapArgs["-proxy"]);
         if (!addrProxy.IsValid())
         {
-            wxMessageBox(_("Invalid -proxy address"), "Bitcoin");
+            wxMessageBox(_("Invalid -proxy address"), "Devcoin");
             return false;
         }
     }
@@ -517,11 +517,11 @@ bool AppInit2(int argc, char* argv[])
     {
         if (!ParseMoney(mapArgs["-paytxfee"], nTransactionFee))
         {
-            wxMessageBox(_("Invalid amount for -paytxfee=<amount>"), "Bitcoin");
+            wxMessageBox(_("Invalid amount for -paytxfee=<amount>"), "Devcoin");
             return false;
         }
         if (nTransactionFee > 0.25 * COIN)
-            wxMessageBox(_("Warning: -paytxfee is set very high.  This is the transaction fee you will pay if you send a transaction."), "Bitcoin", wxOK | wxICON_EXCLAMATION);
+            wxMessageBox(_("Warning: -paytxfee is set very high.  This is the transaction fee you will pay if you send a transaction."), "Devcoin", wxOK | wxICON_EXCLAMATION);
     }
 
     if (fHaveUPnP)
@@ -549,7 +549,7 @@ bool AppInit2(int argc, char* argv[])
     RandAddSeedPerfmon();
 
     if (!CreateThread(StartNode, NULL))
-        wxMessageBox("Error: CreateThread(StartNode) failed", "Bitcoin");
+        wxMessageBox("Error: CreateThread(StartNode) failed", "Devcoin");
 
     if (fServer)
         CreateThread(ThreadRPCServer, NULL);

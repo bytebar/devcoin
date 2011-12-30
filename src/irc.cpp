@@ -348,10 +348,10 @@ void ThreadIRCSeed2(void* parg)
             Send(hSocket, "JOIN #devcoinTEST\r");
             Send(hSocket, "WHO #devcoinTEST\r");
         } else {
-            // randomly join #bitcoin00-#bitcoin99
+            // randomly join #devcoin00-#devcoin99
 //            int channel_number = GetRandInt(100);
-//            Send(hSocket, strprintf("JOIN #bitcoin%02d\r", channel_number).c_str());
-//            Send(hSocket, strprintf("WHO #bitcoin%02d\r", channel_number).c_str());
+//            Send(hSocket, strprintf("JOIN #devcoin%02d\r", channel_number).c_str());
+//            Send(hSocket, strprintf("WHO #devcoin%02d\r", channel_number).c_str());
             Send(hSocket, "JOIN #devcoin\r");
             Send(hSocket, "WHO #devcoin\r");
         }

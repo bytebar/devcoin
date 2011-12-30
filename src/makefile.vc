@@ -89,7 +89,7 @@ OBJS= \
 RC=../share
 
 
-all: bitcoin.exe
+all: devcoin.exe
 
 
 .cpp{obj}.obj:
@@ -121,10 +121,10 @@ obj\ui.obj: $(HEADERS)
 
 obj\uibase.obj: $(HEADERS)
 
-obj\ui.res: $(RC)/ui.rc $(RC)/pixmaps/bitcoin.ico $(RC)/pixmaps/check.ico $(RC)/pixmaps/send16.bmp $(RC)/pixmaps/send16mask.bmp $(RC)/pixmaps/send16masknoshadow.bmp $(RC)/pixmaps/send20.bmp $(RC)/pixmaps/send20mask.bmp $(RC)/pixmaps/addressbook16.bmp $(RC)/pixmaps/addressbook16mask.bmp $(RC)/pixmaps/addressbook20.bmp $(RC)/pixmaps/addressbook20mask.bmp
+obj\ui.res: $(RC)/ui.rc $(RC)/pixmaps/devcoin.ico $(RC)/pixmaps/check.ico $(RC)/pixmaps/send16.bmp $(RC)/pixmaps/send16mask.bmp $(RC)/pixmaps/send16masknoshadow.bmp $(RC)/pixmaps/send20.bmp $(RC)/pixmaps/send20mask.bmp $(RC)/pixmaps/addressbook16.bmp $(RC)/pixmaps/addressbook16mask.bmp $(RC)/pixmaps/addressbook20.bmp $(RC)/pixmaps/addressbook20mask.bmp
     rc $(INCLUDEPATHS) $(DEFS) /Fo$@ %s
 
-bitcoin.exe: $(OBJS) $(CRYPTOPP_OBJS) obj\ui.obj obj\uibase.obj obj\ui.res
+devcoin.exe: $(OBJS) $(CRYPTOPP_OBJS) obj\ui.obj obj\uibase.obj obj\ui.res
     link /nologo /SUBSYSTEM:WINDOWS /OUT:$@ $(LIBPATHS) $** $(WXLIBS) $(LIBS)
 
 .cpp{obj\nogui}.obj:
@@ -150,7 +150,7 @@ obj\nogui\rpc.obj: $(HEADERS)
 
 obj\nogui\init.obj: $(HEADERS)
 
-bitcoind.exe: $(OBJS:obj\=obj\nogui\) obj\ui.res
+devcoind.exe: $(OBJS:obj\=obj\nogui\) obj\ui.res
     link /nologo /OUT:$@ $(LIBPATHS) $** $(LIBS)
 
 
