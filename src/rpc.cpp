@@ -2698,7 +2698,7 @@ void ThreadRPCServer2(void* parg)
             if (valMethod.type() != str_type)
                 throw JSONRPCError(-32600, "Method must be a string");
             string strMethod = valMethod.get_str();
-            if (strMethod != "getwork" && strMethod != "getmemorypool")
+            if (strMethod != "getwork" && strMethod != "getmemorypool" && strMethod != "getworkaux" && strMethod != "buildmerkletree")
                 printf("ThreadRPCServer method=%s\n", strMethod.c_str());
 
             // Parse params
